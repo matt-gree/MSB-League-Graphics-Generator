@@ -1,0 +1,115 @@
+{
+    "Players":{
+        "hellzhero": {"Team Name": "Noble Tigers", "Division": "North", "Color": "#000000", "Display Name": "hellzhero"},
+        "mattgree": {"Team Name": "Bowser and Buddies",  "Division": "North", "Color": "#2D611B", "Display Name": "MattGree"},
+        "vicklessfalcon": {"Team Name": "Squirrel Barkers",  "Division": "North", "Color": "#C10015", "Display Name": "VicklessFalcon"},
+        "balambtransfer": {"Team Name": "Balamb's Mercenaries", "Division": "North", "Color": "#dd2c01", "Display Name": "BalambTransfer"},
+        "drwinkly": {"Team Name": "Apes of Wrath", "Division": "North", "Color": "#FAE829", "Display Name": "Dr. Winkly"},
+        "buffcat70": {"Team Name": "Double Trouble", "Division": "North", "Color": "#CD1e8f", "Display Name": "Buffcat70"},
+        "bennyokay": {"Team Name": "Benny and the Jets", "Division": "North", "Color": "#28A051", "Display Name": "BennyOkay"},
+        "baltor33": {"Team Name": "Moonball Mashers", "Division": "North", "Color": "#24282E", "Display Name": "Baltor33"},
+        "toastyy": {"Team Name": "Tropical Tumbleweeds", "Division": "South", "Color": "#357BDD", "Display Name": "Toasty"},
+        "super63": {"Team Name": "LEANers", "Division": "South", "Color": "#BE39FE", "Display Name": "Super63"},
+        "nuche17": {"Team Name": "Nuchadors", "Division": "South", "Color": "#F67D3c", "Display Name": "Nuche17"},
+        "cezarito": {"Team Name": "The Four Czns", "Division": "South", "Color": "#000000", "Display Name": "Cezarito"},
+        "redbonesfan": {"Team Name": "Boston Red Bones", "Division": "South", "Color": "#B43D38", "Display Name": "RedBonesFan"},
+        "clutch1908": {"Team Name": "Cleanup Crew", "Division": "South", "Color": "#DCd06c", "Display Name": "Clutch1908"},
+        "faceman": {"Team Name": "FaceMADs", "Division": "South", "Color": "#EE001A", "Display Name": "faceman"},
+        "flatbread": {"Team Name": "Milk Drinkers", "Division": "South", "Color": "#350085", "Display Name": "Flatbread"},
+        "plovely28": {"Team Name": "Lovely Nordiques", "Division": "South", "Color": "#BA002B", "Display Name": "PLovely28"}
+    },
+    "League Name": "National Netplay League",
+    "Font": "Lalezar-Regular.ttf",
+    "Matchups": {
+        "Week 1": [
+            ["BennyOkay", "Vickless"],
+            ["Buffcat", "Hellzhero"],
+            ["Clutch1908", "Dr. Winkly"],
+            ["redbonesfan", "Plovely"],
+            ["MattGree", "Balamb"],
+            ["Baltor33", "Super63"],
+            ["Nuche", "Flatbread"],
+            ["Cezarito", "Faceman"]
+        ],
+        "Week 2": [
+            ["Balamb", "BennyOkay"],
+            ["Super63", "Buffcat"],
+            ["Nuche", "Clutch1908"],
+            ["Cezarito", "redbonesfan"],
+            ["Dr. Winkly", "MattGree"],
+            ["Plovely", "Baltor33"],
+            ["Flatbread", "Vickless"],
+            ["Faceman", "Hellzhero"]
+        ],
+        "Week 3": [
+            ["MattGree", "Nuche"],
+            ["Baltor33", "Cezarito"],
+            ["Balamb", "Dr. Winkly"],
+            ["Super63", "Plovely"],
+            ["Clutch1908", "Vickless"],
+            ["redbonesfan", "Hellzhero"],
+            ["BennyOkay", "Flatbread"],
+            ["Buffcat", "Faceman"]
+        ],
+        "Week 4": [
+            ["Nuche", "Balamb"],
+            ["Cezarito", "Super63"],
+            ["Flatbread", "Clutch1908"],
+            ["Faceman", "redbonesfan"],
+            ["Vickless", "MattGree"],
+            ["Hellzhero", "Baltor33"],
+            ["Dr. Winkly", "BennyOkay"],
+            ["Plovely", "Buffcat"]
+        ],
+        "Week 5": [
+            ["MattGree", "Flatbread"],
+            ["Baltor33", "Faceman"],
+            ["Balamb", "Vickless"],
+            ["Super63", "Hellzhero"],
+            ["Dr. Winkly", "Nuche"],
+            ["Plovely", "Cezarito"],
+            ["Clutch1908", "BennyOkay"],
+            ["redbonesfan", "Buffcat"]
+        ],
+        "Week 6": [
+            ["Baltor33", "Dr. Winkly"],
+            ["Cezarito", "BennyOkay"],
+            ["Plovely", "MattGree"],
+            ["Buffcat", "Nuche"],
+            ["redbonesfan", "Balamb"],
+            ["Faceman", "Vickless"],
+            ["Super63", "Clutch1908"],
+            ["Hellzhero", "Flatbread"]
+        ],
+        "Week 7": [
+            ["Clutch1908", "MattGree"],
+            ["redbonesfan", "Baltor33"],
+            ["BennyOkay", "Nuche"],
+            ["Buffcat", "Cezarito"],
+            ["Vickless", "Dr. Winkly"],
+            ["Hellzhero", "Plovely"],
+            ["Flatbread", "Balamb"],
+            ["Faceman", "Super63"]
+        ],
+        "Week 8": [
+            ["MattGree", "BennyOkay"],
+            ["Baltor33", "Buffcat"],
+            ["Nuche", "Vickless"],
+            ["Cezarito", "Hellzhero"],
+            ["Dr. Winkly", "Flatbread"],
+            ["Plovely", "Faceman"],
+            ["Balamb", "Clutch1908"],
+            ["Super63", "redbonesfan"]
+        ],
+        "Interleague Kickoff": [
+            ["Dr. Winkly", "Plovely"],
+            ["MattGree", "Baltor33"],
+            ["Balamb", "Super63"],
+            ["Clutch1908", "redbonesfan"],
+            ["BennyOkay", "Buffcat"],
+            ["Nuche", "Cezarito"],
+            ["Vickless", "Hellzhero"],
+            ["Flatbread", "Faceman"]
+        ]
+    }
+}
