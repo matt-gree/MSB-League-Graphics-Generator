@@ -1,0 +1,16 @@
+output.json
+__pycache__
+LeagueData/NNLSeason5
+LeagueData/NNLSeason6
+LeagueData/NNLS7Training
+LeagueData/PJandFriendsTeamClassic2
+WeeklyGraphic.png
+Graphic.png
+StandingsGraphic.png
+LeagueData/NNLSeason7/.DS_Store
+LeagueData/.DS_Store
+LeagueData/NNLSeason7/Logos/.DS_Store
+cache/cache.pkl
+Season5TeamLogos/.DS_Store
+.DS_Store
+.DS_Store
