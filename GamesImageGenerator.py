@@ -1,11 +1,12 @@
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 from datetime import datetime, timedelta
-from pyRio import endpoint_handling, web_functions, api_manager, web_caching
 import pandas as pd
 import pytz
 import json
 from fuzzywuzzy import process
+
+from pyRio import endpoint_handling, web_functions, api_manager, web_caching
 
 class GeneratorSettings():
     def __init__(self, tag, font_dict=False):
@@ -35,18 +36,34 @@ class GeneratorSettings():
             self.player_font = ImageFont.truetype(font_path, 28)
             self.score_font = ImageFont.truetype(font_path, 72)
 
+        # Starting position for adding elements within the image
         self.drawing_x_pos = 35
         self.drawing_y_pos = 0
+
+        # Size of the box for a single user
         self.user_box_width = 500
         self.user_box_height = 100
+
+        # Padding between games
         self.x_padding_users = 20
         self.y_padding_games = 20
+
+        # Padding between columns (a column is made of two games left to right)
         self.x_padding_columns = 80
+
+        # Top/Bottom padding on a logo & minimum left padding
         self.logo_padding = 10
+
+        # Padding between the logo and the subtitle
         self.title_padding = 30
-        self.score_centered_bounding_box = 100
+
+        # Affects how fast the color in the boxes fade to transparent
         self.gradient_factor = 1.5
+
+        # Padding between logo and player/team names
         self.logo_player_padding = 10
+
+        # Location of the center of the score in a box from the right side of the box
         self.user_box_score_right_padding = 50
 
 
@@ -139,7 +156,6 @@ def create_box(player_display_name, team_name, box_color, score, logo_path, star
     score_x_start = starting_x_pos + settings.user_box_width - settings.user_box_score_right_padding - score_text_width/2
 
     centered_scoring_start = (settings.user_box_height - score_text_height)/2
-    score_pos = settings.user_box_width - settings.score_centered_bounding_box + (settings.score_centered_bounding_box - score_text_width)-20
     draw.text((score_x_start, starting_y_pos+centered_scoring_start), score, font=settings.score_font, fill='white', stroke_width=2, stroke_fill='black')
 
 def generator(games_df: pd.DataFrame, settings: GeneratorSettings, limit_days_ago=-1, limit_games=-1, subtitle=False, size='large', output_name = 'Graphic.png'):
@@ -288,9 +304,7 @@ def generator(games_df: pd.DataFrame, settings: GeneratorSettings, limit_days_ag
 
 def standings_generator(games_df: pd.DataFrame, settings: GeneratorSettings, output_name = 'StandingsGraphic.png'):
     
-    use_logo = True
     games_of_interest = games_df.sort_values(by='date_time_end', ascending=False)
-
     games_of_interest = games_of_interest.reset_index()
 
     graphic_width = 325
@@ -348,20 +362,12 @@ def standings_generator(games_df: pd.DataFrame, settings: GeneratorSettings, out
         
     image.save('StandingsGraphic.png')
 
-
-    image = Image.new('RGBA', (graphic_width, graphic_height), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(image)
-
-    remove_transparencey = Image.open("StandingsGraphic.png").convert('RGBA')
-    image.paste(remove_transparencey, (0,0))
-
-    image.save(output_name)
-
-def make_graphic(settings: GeneratorSettings, edit_mode_file=False):
+def get_web_games(settings: GeneratorSettings, edit_mode_file=True):
     manager = api_manager.APIManager()
     api_response = web_functions.games_endpoint(manager, settings.tag, limit_games=500)
     web_cache = web_caching.CompleterCache(manager)
     games_df = endpoint_handling.games_endpoint(api_response, web_cache)
+    
     if edit_mode_file:
         add_games_df = pd.read_json('output.json', orient='records')
         print(add_games_df)
@@ -370,53 +376,30 @@ def make_graphic(settings: GeneratorSettings, edit_mode_file=False):
         print(add_games_df)
         games_df = pd.concat([games_df, add_games_df], ignore_index=True)
 
-    print(games_df)
+    return games_df
 
+def make_graphic(settings: GeneratorSettings, edit_mode_file=False):
+    games_df = get_web_games(settings, edit_mode_file)
+    print(games_df)
     generator(games_df, settings, limit_days_ago=1, size='small')
 
 
 def make_standings_graphic(settings: GeneratorSettings, edit_mode_file=False):
-    manager = api_manager.APIManager()
-    api_response = web_functions.games_endpoint(manager, settings.tag, limit_games=500)
-    web_cache = web_caching.CompleterCache(manager)
-    games_df = endpoint_handling.games_endpoint(api_response, web_cache)
-    if edit_mode_file:
-        add_games_df = pd.read_json('output.json', orient='records')
-        print(add_games_df)
-        add_games_df['date_time_start'] = pd.to_datetime(add_games_df['date_time_start'], utc=True, unit='ms').dt.tz_convert('US/Eastern')
-        add_games_df['date_time_end'] = pd.to_datetime(add_games_df['date_time_end'], utc=True, unit='ms').dt.tz_convert('US/Eastern')
-        print(add_games_df)
-        games_df = pd.concat([games_df, add_games_df], ignore_index=True)
-
+    games_df = get_web_games(settings, edit_mode_file)
     print(games_df)
-
     standings_generator(games_df, settings)
 
 
-def make_individual_games(settings: GeneratorSettings):
-    manager = api_manager.APIManager()
-    api_response = web_functions.games_endpoint(manager, settings.tag, limit_games=500)
-    web_cache = web_caching.CompleterCache(manager)
-    games_df = endpoint_handling.games_endpoint(api_response, web_cache)
+def make_individual_games(settings: GeneratorSettings, edit_mode_file):
+    games_df = get_web_games(settings, edit_mode_file)
 
     for index, game in games_df.iterrows():
         game_df = games_df.iloc[[index]].reset_index(drop=True)
         generator(game_df, settings, size='solo', output_name=f'graphic_{index}.png')
 
 def make_weekly_graphics(settings: GeneratorSettings, matchup: str, edit_mode_file=True):
-    manager = api_manager.APIManager()
-    api_response = web_functions.games_endpoint(manager, settings.tag, limit_games=500)
-    web_cache = web_caching.CompleterCache(manager)
-    games_df = endpoint_handling.games_endpoint(api_response, web_cache)
-
-    if edit_mode_file:
-        add_games_df = pd.read_json('output.json', orient='records')
-        add_games_df['date_time_start'] = pd.to_datetime(add_games_df['date_time_start'], utc=True, unit='ms').dt.tz_convert('US/Eastern')
-        add_games_df['date_time_end'] = pd.to_datetime(add_games_df['date_time_end'], utc=True, unit='ms').dt.tz_convert('US/Eastern')
-        games_df = pd.concat([games_df, add_games_df], ignore_index=True)
-
+    games_df = get_web_games(settings, edit_mode_file)
     week_matchups = settings.matchups[matchup]
-
     def match_player_to_team(player_name):
         best_match = process.extractOne(player_name.lower(), settings.player_data.keys())
         if best_match:
@@ -429,17 +412,12 @@ def make_weekly_graphics(settings: GeneratorSettings, matchup: str, edit_mode_fi
     for single_matchup in week_matchups:
         converted_matchups.append(tuple(sorted([match_player_to_team(single_matchup[0]), match_player_to_team(single_matchup[1])])))
 
-    print(converted_matchups)
-
-    print(games_df)
-
     # Apply the function to the DataFrame
     filtered_games_df = games_df[
     games_df.apply(lambda row: tuple(sorted([row['away_user'].lower(), row['home_user'].lower()])) in converted_matchups, axis=1)
     ]
 
     print(filtered_games_df)
-
     generator(filtered_games_df, settings, subtitle=matchup, size='large', output_name=f'WeeklyGraphic.png')
 
 
@@ -456,7 +434,7 @@ PJFriendsSettings = GeneratorSettings('PJandFriendsTeamClassic2', font_dict=pjfr
 #NNLS7TrainingSettings = GeneratorSettings('NNLS7Training')
 NNLS7Settings = GeneratorSettings('NNLSeason7')
 
-make_weekly_graphics(NNLS7Settings, 'Interleague Kickoff')
+#make_weekly_graphics(NNLS7Settings, 'Week 1')
 
 PJFriendsIndividualGames = GeneratorSettings('PJandFriendsTeamClassic2', font_dict=pjfriendsfont)
 PJFriendsIndividualGames.drawing_x_pos = 0
@@ -479,8 +457,8 @@ NNLS7StandingsSettings.user_box_width = 325
 NNLS7StandingsSettings.drawing_x_pos = 0
 NNLS7StandingsSettings.drawing_y_pos = 0
 NNLS7StandingsSettings.logo_padding = 2
-NNLS7StandingsSettings.gradient_factor = 0.5
+NNLS7StandingsSettings.gradient_factor = 0.3
 NNLS7StandingsSettings.logo_player_padding = 25
 NNLS7StandingsSettings.user_box_score_right_padding = 30
 
-#make_standings_graphic(NNLS7StandingsSettings, edit_mode_file=True)
+make_standings_graphic(NNLS7StandingsSettings, edit_mode_file=True)
