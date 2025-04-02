@@ -79,6 +79,11 @@ class GeneratorSettings(LeagueData):
             'individual': (self.user_box_width,  2*self.user_box_height + 2*self.y_padding_games)
         }
 
+        self.standigs_graphic_sizes = {
+            'stream': (325, 512),
+            'weekly graphic': (600, 912),
+        }
+
 
 def create_box(player_display_name, team_name, box_color, score, logo_path, starting_x_pos, starting_y_pos, settings: GeneratorSettings, image, draw):
 
@@ -233,7 +238,7 @@ def scorecard_generator(games_df: pd.DataFrame, settings: GeneratorSettings, lim
         y_drawing_pos += 2*settings.user_box_height + settings.y_padding_games
         return y_drawing_pos
     
-    def reset_drawing_y_pos_after_graphic_height_exceeded(x, y):
+    def reset_drawing_y_pos_after_graphic_height_exceeded(x, y, new_row, old_weekday):
         next_scoreboard_bottom_px = y + 2*(settings.user_box_height + settings.y_padding_games)
         if next_scoreboard_bottom_px >= graphic_size[1]:
             y = 200 
@@ -241,7 +246,7 @@ def scorecard_generator(games_df: pd.DataFrame, settings: GeneratorSettings, lim
             old_weekday = ''
             new_row = True
     
-        return x, y
+        return x, y, new_row, old_weekday
     
     old_weekday = ''
     old_home = ''
@@ -251,17 +256,21 @@ def scorecard_generator(games_df: pd.DataFrame, settings: GeneratorSettings, lim
     for index, game in games_of_interest.iterrows():
         print(game['home_user'], game['away_user'])
         new_weekday = game['date_time_start'].strftime('%A, %B %-d, %Y')
+
         if new_weekday != old_weekday:
             new_row=True
             if index !=0:
                 drawing_y_pos = new_row_drawing(drawing_y_pos)
-                drawing_x_pos, drawing_y_pos = reset_drawing_y_pos_after_graphic_height_exceeded(drawing_x_pos, drawing_y_pos)
+                drawing_x_pos, drawing_y_pos, new_row, old_weekday = reset_drawing_y_pos_after_graphic_height_exceeded(drawing_x_pos, drawing_y_pos, new_row, old_weekday)
             draw.text((drawing_x_pos, drawing_y_pos), new_weekday, font=settings.team_font, fill='white', stroke_width=2, stroke_fill='black')
             drawing_y_pos += settings.team_font.getbbox(new_weekday)[3]
             old_weekday = new_weekday
         elif new_row and index != 0:
             drawing_y_pos = new_row_drawing(drawing_y_pos)
-            drawing_x_pos, drawing_y_pos = reset_drawing_y_pos_after_graphic_height_exceeded(drawing_x_pos, drawing_y_pos)
+            drawing_x_pos, drawing_y_pos, new_row, old_weekday = reset_drawing_y_pos_after_graphic_height_exceeded(drawing_x_pos, drawing_y_pos, new_row, old_weekday)
+            draw.text((drawing_x_pos, drawing_y_pos), new_weekday, font=settings.team_font, fill='white', stroke_width=2, stroke_fill='black')
+            drawing_y_pos += settings.team_font.getbbox(new_weekday)[3]
+            old_weekday = new_weekday
 
         new_away = game['away_user'].lower()
         new_home = game['home_user'].lower()
@@ -302,19 +311,7 @@ def scorecard_generator(games_df: pd.DataFrame, settings: GeneratorSettings, lim
         resized_background.paste(remove_transparency, (0, 0), remove_transparency)  # Using the alpha channel as mask
         resized_background.save(settings.path / output_name)
 
-def standings_generator(games_df: pd.DataFrame, settings: GeneratorSettings, output_name = 'StandingsGraphic.png'):
-    games_of_interest = games_df.sort_values(by='date_time_end', ascending=False)
-    games_of_interest = games_of_interest.reset_index()
-
-    graphic_width = 325
-    graphic_height = 512
-
-    image = Image.new('RGBA', (graphic_width, graphic_height), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(image)
-
-    drawing_x_pos = settings.drawing_x_pos
-    drawing_y_pos = settings.drawing_y_pos
-    
+def generate_stadings_df(games_df):
     standings = {}
 
     for index, game in games_df.iterrows():
@@ -345,7 +342,42 @@ def standings_generator(games_df: pd.DataFrame, settings: GeneratorSettings, out
     standings_df = standings_df.sort_values(by=["Win%", "Wins", "Losses", "Run Differential"], ascending=[False, False, True, False])
 
     # Display standings
-    print(standings_df)
+    # print(standings_df)
+
+    return standings_df
+
+
+def standings_generator(games_df: pd.DataFrame, settings: GeneratorSettings, size_input='stream', title=False, output_name = 'StandingsGraphic.png'):
+    games_of_interest = games_df.sort_values(by='date_time_end', ascending=False)
+    games_of_interest = games_of_interest.reset_index()
+
+    graphic_width, graphic_height = settings.standigs_graphic_sizes[size_input]
+    
+    if title:
+        title_top_font_padding = settings.title_font.getmask(title).size[1]
+        title_width = settings.title_font.getbbox(title)[2]
+        graphic_height+=title_top_font_padding+settings.title_padding
+
+    image = Image.new('RGBA', (graphic_width, graphic_height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+
+    drawing_x_pos = settings.drawing_x_pos
+    drawing_y_pos = settings.drawing_y_pos
+
+    if title:
+        x_title_centered = (graphic_width - drawing_x_pos - title_width)/2
+        
+        draw.text((x_title_centered, drawing_y_pos - settings.title_font.getbbox(title)[1]+2),
+                    title,
+                    font=settings.title_font,
+                    fill='white',
+                    stroke_width=2,
+                    stroke_fill='black'
+        )
+
+        drawing_y_pos += title_top_font_padding +settings.title_padding
+
+    standings_df = generate_stadings_df(games_df)
 
     for player, standings in standings_df.iterrows():
         player = player.lower()
@@ -359,7 +391,7 @@ def standings_generator(games_df: pd.DataFrame, settings: GeneratorSettings, out
 
         drawing_y_pos += settings.user_box_height
         
-    image.save(settings.path / 'StandingsGraphic.png')
+    image.save(settings.path / output_name)
 
 def get_web_games(settings: LeagueData, edit_mode_file=True):
     manager = api_manager.APIManager()
@@ -377,14 +409,6 @@ def get_web_games(settings: LeagueData, edit_mode_file=True):
 
     return games_df
 
-def make_graphic(settings: GeneratorSettings, games_df: pd.DataFrame, edit_mode_file=False):
-    scorecard_generator(games_df, settings, size_input='small')
-
-
-def make_standings_graphic(settings: GeneratorSettings, games_df: pd.DataFrame, edit_mode_file=False):
-    standings_generator(games_df, settings)
-
-
 def make_individual_games(settings: GeneratorSettings, games_df: pd.DataFrame, edit_mode_file):
     games_df = get_web_games(settings, edit_mode_file)
 
@@ -392,7 +416,7 @@ def make_individual_games(settings: GeneratorSettings, games_df: pd.DataFrame, e
         game_df = games_df.iloc[[index]].reset_index(drop=True)
         scorecard_generator(game_df, settings, size_input='solo', output_name=f'graphic_{index}.png')
 
-def make_weekly_graphics(settings: GeneratorSettings, games_df: pd.DataFrame, matchup: str, edit_mode_file=True):
+def make_weekly_graphics(settings: GeneratorSettings, games_df: pd.DataFrame, matchup: str):
     week_matchups = settings.matchups[matchup]
     def match_player_to_team(player_name):
         best_match = process.extractOne(player_name.lower(), settings.player_data.keys())
