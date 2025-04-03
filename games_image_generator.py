@@ -429,11 +429,44 @@ def get_web_games(settings: LeagueData, edit_mode_file=True):
     
     if edit_mode_file:
         add_games_df = pd.read_json(settings.json_path, orient='records')
-        print(add_games_df)
         add_games_df['date_time_start'] = pd.to_datetime(add_games_df['date_time_start'], utc=True, unit='ms').dt.tz_convert('US/Eastern')
         add_games_df['date_time_end'] = pd.to_datetime(add_games_df['date_time_end'], utc=True, unit='ms').dt.tz_convert('US/Eastern')
-        print(add_games_df)
         games_df = pd.concat([games_df, add_games_df], ignore_index=True)
+
+    unique_names = pd.unique(games_df[['away_user', 'home_user']].values.ravel()).tolist()
+
+    def match_player_to_team(player_name):
+        best_match = process.extractOne(player_name, unique_names)
+        if best_match:
+            # Return the team information corresponding to the best match
+            return best_match[0]
+        return None
+    
+    games_df["Week"] = ""
+
+    for week, matches_list in settings.matchups.items():
+        for match in matches_list:
+            team1 = match_player_to_team(match[0])
+            team2 = match_player_to_team(match[1])
+
+            mask = ((games_df["away_user"] == team1) & (games_df["home_user"] == team2)) | \
+                    ((games_df["away_user"] == team2) & (games_df["home_user"] == team1))
+            
+            games_df.loc[mask, "Week"] = week
+
+    return games_df
+
+def remove_games_after_cutoff(settings: LeagueData, games_df: pd.DataFrame, cutoff: str):
+    ordered_weeks = list(settings.matchups.keys())
+    if cutoff not in ordered_weeks:
+        raise ValueError(f"'{cutoff}' not found in the list.")
+    
+    index = ordered_weeks.index(cutoff)  # Find index of the item
+    ordered_weeks = ordered_weeks[:index]
+
+    print(ordered_weeks)
+
+    games_df = games_df[games_df["Week"].isin(ordered_weeks)]
 
     return games_df
 
@@ -445,22 +478,6 @@ def make_individual_games(settings: GeneratorSettings, games_df: pd.DataFrame, e
         scorecard_generator(game_df, settings, size_input='solo', output_name=f'graphic_{index}.png')
 
 def make_weekly_graphics(settings: GeneratorSettings, games_df: pd.DataFrame, matchup: str):
-    week_matchups = settings.matchups[matchup]
-    def match_player_to_team(player_name):
-        best_match = process.extractOne(player_name.lower(), settings.player_data.keys())
-        if best_match:
-            # Return the team information corresponding to the best match
-            return best_match[0]
-        return None
-    
-    converted_matchups = []
-
-    for single_matchup in week_matchups:
-        converted_matchups.append(tuple(sorted([match_player_to_team(single_matchup[0]), match_player_to_team(single_matchup[1])])))
-
-    # Apply the function to the DataFrame
-    filtered_games_df = games_df[
-    games_df.apply(lambda row: tuple(sorted([row['away_user'].lower(), row['home_user'].lower()])) in converted_matchups, axis=1)
-    ]
+    filtered_games_df = games_df[games_df['Week'] == matchup]
 
     scorecard_generator(filtered_games_df, settings, subtitle=matchup, size_input='large', output_name=f'WeeklyGraphic.png')

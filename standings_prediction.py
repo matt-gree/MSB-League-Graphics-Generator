@@ -8,13 +8,16 @@ import statsmodels.api as sm
 from fuzzywuzzy import process
 from pyRio.api_manager import APIManager
 from pyRio.web_functions import game_mode_ladder
-from games_image_generator import generate_stadings_df
+from games_image_generator import generate_stadings_df, remove_games_after_cutoff
+from numba import njit
+
 
 manager = APIManager()
 elo_map = pd.DataFrame(game_mode_ladder(manager, 'NNL Season 7')).T['rating'].to_dict()
 
 NNLS7 = LeagueData('NNLSeason7')
 df = get_web_games(NNLS7, edit_mode_file=True)
+df = remove_games_after_cutoff(NNLS7, df, 'Week 6')
 
 def match_player_to_team(player_name):
         best_match = process.extractOne(player_name.lower(), NNLS7.player_data.keys())
@@ -91,7 +94,8 @@ def matchup_run_distirbution(user1, user2, games_df):
 
     return user1_r_matchup, user1_p_matchup, user2_r_matchup, user2_p_matchup
 
-def monte_carlo(matchup, df, elo_map, num_simulations = 100000, elo_scaling = 200, plot=False):
+
+def monte_carlo(matchup, df, elo_map, num_simulations = 10000, elo_scaling = 200, plot=False):
     user1_r, user1_p, user2_r, user2_p = matchup_run_distirbution(matchup[0], matchup[1], df)
 
     runs_user1 = stats.nbinom.rvs(user1_r, user1_p, size=num_simulations)
@@ -145,7 +149,7 @@ def monte_carlo(matchup, df, elo_map, num_simulations = 100000, elo_scaling = 20
 
 # monte_carlo(('Flatbread', 'DrWinkly'), df, elo_map, plot=True)
 
-def monte_carlo_two_game_series(matchup, df, elo_map, num_simulations=100000, elo_scaling=200, plot=False):
+def monte_carlo_two_game_series(matchup, df, elo_map, num_simulations=10000, elo_scaling=200, plot=False):
     """Simulates a two-game series between two players using Monte Carlo simulations."""
     
     # Get run distribution parameters
@@ -203,7 +207,7 @@ def monte_carlo_two_game_series(matchup, df, elo_map, num_simulations=100000, el
 
 # monte_carlo_two_game_series(('Flatbread', 'DrWinkly'), df, elo_map, plot=True)
 
-def simulate_season(games_df, elo_map, matchups, current_standings, num_simulations=100000, elo_scaling=200):
+def simulate_season(games_df, elo_map, matchups, current_standings, num_simulations=10000, elo_scaling=200):
     rw_league_player_names = list(current_standings.index)
     standings_tracker = {team: np.zeros(len(rw_league_player_names)) for team in rw_league_player_names}
 
