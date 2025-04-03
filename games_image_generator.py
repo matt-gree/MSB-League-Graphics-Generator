@@ -174,7 +174,7 @@ def create_box(player_display_name, team_name, box_color, score, logo_path, star
     centered_scoring_start = (settings.user_box_height - score_text_height)/2
     draw.text((score_x_start, starting_y_pos+centered_scoring_start), score, font=settings.score_font, fill='white', stroke_width=2, stroke_fill='black')
 
-def scorecard_generator(games_df: pd.DataFrame, settings: GeneratorSettings, limit_days_ago=-1, limit_games=-1, subtitle=False, size_input='large', output_name = 'Graphic.png'):
+def scorecard_generator(games_df: pd.DataFrame, settings: GeneratorSettings, limit_days_ago=-1, limit_games=-1, subtitle=False, size_input='large', output_name = 'Graphic.png', player_filter = False):
     use_logo = True
     use_background = True
     games_of_interest = games_df.sort_values(by='date_time_end', ascending=False, ignore_index=True)
@@ -189,6 +189,10 @@ def scorecard_generator(games_df: pd.DataFrame, settings: GeneratorSettings, lim
         print(games_of_interest)
 
     games_of_interest = games_of_interest.reset_index()
+
+    if player_filter:
+        games_of_interest = games_of_interest[(games_of_interest['away_user'] == player_filter) | (games_of_interest['home_user'] == player_filter)]
+        subtitle = f'{player_filter} NNL Season 7 Games'
 
     graphic_size = settings.graphic_sizes[size_input]
 
@@ -311,7 +315,7 @@ def scorecard_generator(games_df: pd.DataFrame, settings: GeneratorSettings, lim
         resized_background.paste(remove_transparency, (0, 0), remove_transparency)  # Using the alpha channel as mask
         resized_background.save(settings.path / output_name)
 
-def generate_stadings_df(games_df):
+def generate_stadings_df(games_df, settings: LeagueData):
     standings = {}
 
     for index, game in games_df.iterrows():
@@ -341,7 +345,31 @@ def generate_stadings_df(games_df):
     # Sort by Win%, Games Played, and Run Differential
     standings_df = standings_df.sort_values(by=["Win%", "Wins", "Losses", "Run Differential"], ascending=[False, False, True, False])
 
-    # Display standings
+    player_keys = list(settings.player_data.keys())
+
+    # Function to find the best fuzzy match
+    def fuzzy_match(name, choices, threshold=80):
+        match, score = process.extractOne(name, choices)
+        return match if score >= threshold else None  # Only return if confidence is high
+
+    # Apply fuzzy matching to standings index
+    standings_df["Matched Username"] = standings_df.index.map(lambda x: fuzzy_match(x, player_keys))
+
+    # Drop rows where no match was found
+    standings_df = standings_df.dropna(subset=["Matched Username"])
+    standings_df["Division"] = standings_df["Matched Username"].map(lambda x: settings.player_data[x]["Division"])
+
+    top_division = standings_df.iloc[0]["Division"]  # First place player's division
+    # Find the highest-ranked team from the other division
+    other_division_team = standings_df[standings_df["Division"] != top_division].iloc[0]  # Extract row
+
+    # Reorder the standings
+    standings_df = pd.concat([
+        standings_df.iloc[:1],  # Keep the top team
+        standings_df.loc[[other_division_team.name]],  # Move the top team from the other division to 2nd place
+        standings_df.iloc[1:].drop(index=other_division_team.name)  # Remove them from their old position & keep the rest
+    ])
+        # Display standings
     # print(standings_df)
 
     return standings_df

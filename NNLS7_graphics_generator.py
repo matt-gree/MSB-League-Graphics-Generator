@@ -46,3 +46,5 @@ standings_generator(games_df, NNLS7StandingsInsert, size_input='weekly graphic',
 NNLS7Settings = GeneratorSettings('NNLSeason7')
 scorecard_generator(games_df, NNLS7Settings, limit_games=4, size_input='large')
 make_weekly_graphics(NNLS7Settings, games_df, 'Week 5')
+
+scorecard_generator(games_df, NNLS7Settings, size_input='large', player_filter='VicklessFalcon', output_name='Vickless.png')

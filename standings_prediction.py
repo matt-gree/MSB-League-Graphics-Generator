@@ -143,11 +143,72 @@ def monte_carlo(matchup, df, elo_map, num_simulations = 100000, elo_scaling = 20
     
     return run_differential
 
-monte_carlo(('Flatbread', 'DrWinkly'), df, elo_map, plot=True)
+# monte_carlo(('Flatbread', 'DrWinkly'), df, elo_map, plot=True)
 
-def simulate_season(games_df, elo_map, matchups, current_standings, num_simulations=10000, elo_scaling=200):
+def monte_carlo_two_game_series(matchup, df, elo_map, num_simulations=100000, elo_scaling=200, plot=False):
+    """Simulates a two-game series between two players using Monte Carlo simulations."""
+    
+    # Get run distribution parameters
+    user1_r, user1_p, user2_r, user2_p = matchup_run_distirbution(matchup[0], matchup[1], df)
+
+    # Simulate TWO games separately
+    runs_user1_game1 = stats.nbinom.rvs(user1_r, user1_p, size=num_simulations)
+    runs_user2_game1 = stats.nbinom.rvs(user2_r, user2_p, size=num_simulations)
+
+    runs_user1_game2 = stats.nbinom.rvs(user1_r, user1_p, size=num_simulations)
+    runs_user2_game2 = stats.nbinom.rvs(user2_r, user2_p, size=num_simulations)
+
+    # Compute run differential for both games and sum
+    run_differential = (runs_user1_game1 - runs_user2_game1) + (runs_user1_game2 - runs_user2_game2)
+
+    # Apply Elo adjustment
+    if matchup[0] in elo_map and matchup[1] in elo_map:
+        elo_diff = elo_map[matchup[0]] - elo_map[matchup[1]]
+    else:
+        elo_diff = 0  
+
+    elo_adjustment = (elo_diff / elo_scaling) * 2  # Scaling for 2 games
+    run_differential = (run_differential + elo_adjustment).astype(int)
+
+    # Ensure no ties and apply rounding adjustments
+    run_differential += (run_differential == 0) * int(np.sign(np.random.uniform(-1, 1)))
+    run_differential = np.where((run_differential > -0.5) & (run_differential < 0), -1, run_differential)
+    run_differential = np.where((run_differential >= 0) & (run_differential < 0.5), 1, run_differential)
+    run_differential = np.clip(run_differential, -20, 20)  # Bound values for 2-game total
+
+    run_differential = np.round(run_differential).astype(int)
+
+    if plot:
+        # Compute win probabilities over the series
+        user1_series_wins = np.sum(run_differential > 0)
+        user2_series_wins = np.sum(run_differential < 0)
+        
+        user1_series_win_prob = user1_series_wins / num_simulations
+        user2_series_win_prob = user2_series_wins / num_simulations
+
+        print(f"User 1 Series Win Probability: {user1_series_win_prob:.4f}")
+        print(f"User 2 Series Win Probability: {user2_series_win_prob:.4f}")
+
+        # Plot results
+        plt.figure(figsize=(10, 5))
+        sns.histplot(run_differential, bins=range(min(run_differential), max(run_differential) + 1), kde=True, stat="density")
+        plt.axvline(np.mean(run_differential), color='red', linestyle='dashed', label=f"Mean: {np.mean(run_differential):.2f}")
+        plt.xlabel("Total Run Differential Over 2 Games")
+        plt.ylabel("Density")
+        plt.title(f"Monte Carlo Simulation of Two-Game Series ({num_simulations} Simulations)")
+        plt.legend()
+        plt.show()
+    
+    return run_differential
+
+# monte_carlo_two_game_series(('Flatbread', 'DrWinkly'), df, elo_map, plot=True)
+
+def simulate_season(games_df, elo_map, matchups, current_standings, num_simulations=100000, elo_scaling=200):
     rw_league_player_names = list(current_standings.index)
     standings_tracker = {team: np.zeros(len(rw_league_player_names)) for team in rw_league_player_names}
+
+    unique_teams = set([team for game in matchups for team in game])
+    team_name_map = {team: process.extractOne(team, rw_league_player_names)[0] for team in unique_teams}
 
     for _ in range(num_simulations):
         simulated_records = current_standings.copy()  # Start with actual standings
@@ -155,17 +216,16 @@ def simulate_season(games_df, elo_map, matchups, current_standings, num_simulati
         # Simulate all remaining games
         print(_)
         for game in matchups:
-            team1 = process.extractOne(game[0], rw_league_player_names)[0]
-            team2 = process.extractOne(game[1], rw_league_player_names)[0]
+            team1 = team_name_map[game[0]]
+            team2 = team_name_map[game[1]]
             for i in range(2):
-                run_differential = monte_carlo((team1, team2), games_df, elo_map, num_simulations=1, elo_scaling=elo_scaling)  # Simulate one game
-                
-                # Assign winner based on run differential
+                run_differential = monte_carlo((team1, team2), games_df, elo_map, num_simulations=1, elo_scaling=elo_scaling)
+                run_differential = int(run_differential[0])
                 simulated_records.loc[team1, 'Games Played'] += 1
                 simulated_records.loc[team2, 'Games Played'] += 1
                 simulated_records.loc[team1, 'Run Differential'] += run_differential
                 simulated_records.loc[team2, 'Run Differential'] -= run_differential
-                if run_differential[0] > 0:
+                if run_differential > 0:
                     simulated_records.loc[team1, 'Wins'] += 1
                     simulated_records.loc[team2, 'Losses'] += 1
                 else:
@@ -173,6 +233,17 @@ def simulate_season(games_df, elo_map, matchups, current_standings, num_simulati
                     simulated_records.loc[team1, 'Losses'] += 1
 
         sorted_teams = simulated_records.sort_values(by=["Wins", "Run Differential"], ascending=[False, False])
+
+        top_division = sorted_teams.iloc[0]["Division"]  # First place player's division
+        # Find the highest-ranked team from the other division
+        other_division_team = sorted_teams[sorted_teams["Division"] != top_division].iloc[0]  # Extract row
+
+        # Reorder the standings
+        sorted_teams = pd.concat([
+            sorted_teams.iloc[:1],  # Keep the top team
+            sorted_teams.loc[[other_division_team.name]],  # Move the top team from the other division to 2nd place
+            sorted_teams.iloc[1:].drop(index=other_division_team.name)  # Remove them from their old position & keep the rest
+        ])
 
         # Track frequency of each team's final placement
         for rank, team in enumerate(list(sorted_teams.index)):
@@ -183,7 +254,7 @@ def simulate_season(games_df, elo_map, matchups, current_standings, num_simulati
     standings_df.index += 1  # Rank starts from 1
     return standings_df
 
-current_standings = generate_stadings_df(df)
+current_standings = generate_stadings_df(df, NNLS7)
 print(current_standings)
 simulation = simulate_season(df, elo_map, remaining_matchups, current_standings)
 simulation.to_excel("season_simulation_results.xlsx", index=True)
