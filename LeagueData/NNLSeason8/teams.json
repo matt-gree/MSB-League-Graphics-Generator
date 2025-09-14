@@ -1,0 +1,124 @@
+{
+    "Players":{
+        "hellzhero": {"Team Name": "Noble Tigers", "Division": "Bananza", "Color": "#000000", "Display Name": "hellzhero", "Drafted Team": ["Luigi", "Magikoopa(R)", "Daisy", "Luigi", "Bro(H)", "Daisy", "Peach", "Noki(G)", "Koopa(R)", "Daisy"]},
+        "mattgree": {"Team Name": "Greesers",  "Division": "Bananza", "Color": "#6699CB", "Display Name": "MattGree", "Drafted Team": ["Waluigi", "Bowser Jr", "Magikoopa(Y)", "Pianta(R)", "Noki(B)", "Bro(F)", "Bowser Jr", "Pianta(Y)", "Toadette", "Paragoomba"]},
+        "vicklessfalcon": {"Team Name": "Squirrel Barkers",  "Division": "Division 2", "Color": "#C10015", "Display Name": "VicklessFalcon", "Drafted Team": ["Luigi", "King Boo", "Waluigi", "Daisy", "Koopa(R)", "Paratroopa(G)", "Paratroopa(G)", "Noki(R)", "Wario", "Bowser Jr"]},
+        "balambtransfer": {"Team Name": "Mercs", "Division": "Division 2", "Color": "#6A3092", "Display Name": "BalambTransfer",  "Drafted Team": ["Boo", "Daisy", "Magikoopa(B)", "Wario", "Luigi", "Magikoopa(G)", "Dry Bones(G)", "Bowser Jr", "Shy Guy(Y)", "Dry Bones(Gy)"]},
+        "nhamelin": {"Team Name": "Why Not Us", "Division": "Bananza", "Color": "#492823", "Display Name": "Nick H", "Drafted Team": ["Birdo", "Magikoopa(G)", "Bowser Jr", "Toadsworth", "Petey", "Petey", "Peach", "Paratroopa(G)", "Toad(Y)", "Shy Guy(B)"]},
+        "bennyokay": {"Team Name": "Benny and the Jets", "Division": "Bananza", "Color": "#28A051", "Display Name": "BennyOkay", "Drafted Team": ["Boo", "Noki(G)", "Mario", "DK", "Yoshi", "Dixie", "Baby Mario", "Toadette", "Toad(R)", "Toad(P)"]},
+        "baltor33": {"Team Name": "Moonball Mashers", "Division": "Bananza", "Color": "#24282E", "Display Name": "Baltor33", "Drafted Team": ["Paratroopa(G)", "Dry Bones(G)", "Bowser", "Bowser(R)", "Monty", "Waluigi", "Dry Bones(R)", "Koopa(G)", "Dry Bones(Gy)", "Shy Guy(Y)"]},
+        "nuche17": {"Team Name": "Nuchadors", "Division": "Division 2", "Color": "#F67D3c", "Display Name": "Nuche17", "Drafted Team": ["DK", "Petey", "Bowser", "Birdo", "Baby Luigi", "Diddy", "Toadette", "Dry Bones(R)", "Koopa(G)", "Goomba"]},
+        "cezarito": {"Team Name": "The Four Czns", "Division": "Bananza", "Color": "#000000", "Display Name": "Cezarito", "Drafted Team": ["DK", "Yoshi", "DK", "Luigi", "Birdo", "Pianta(B)", "Dry Bones(G)", "Noki(R)", "Diddy", "Goomba"]},
+        "redbonesfan": {"Team Name": "Boston Red Bones", "Division": "Division 2", "Color": "#B43D38", "Display Name": "RedBonesFan", "Drafted Team": ["Bro(H)", "Magikoopa(Y)", "Luigi", "Birdo", "Mario", "Yoshi", "Yoshi", "Baby Mario", "Dixie", "Shy Guy(G)"]},
+        "flatbread": {"Team Name": "Milk Drinkers", "Division": "Division 2", "Color": "#350085", "Display Name": "Flatbread", "Drafted Team": ["Toad(P)", "Petey", "Wario", "Toadette", "Waluigi", "Toadsworth", "Toad(R)", "DK", "Shy Guy(Bk)", "Dry Bones(B)"]},
+        "plovely28": {"Team Name": "Lovely Nordiques", "Division": "Division 2", "Color": "#BA002B", "Display Name": "PLovely28", "Drafted Team": ["Toadsworth", "Yoshi", "Daisy", "Pianta(R)", "Boo", "DK", "Diddy", "Paratroopa(R)", "Shy Guy(R)", "Paragoomba"]},
+        "chillinchikns": {"Team Name": "Chikn Troop", "Division": "Bananza", "Color": "#686806", "Display Name": "Brian", "Drafted Team": ["Wario", "King Boo", "Wario", "Boo", "Wario", "Paratroopa(R)", "Shy Guy(Bk)", "Shy Guy(R)", "Shy Guy(G)", "Dry Bones(B)"]},
+        "jaykay": {"Team Name": "Jays", "Division": "Bananza", "Color": "#1C8AFF", "Display Name": "JayKay", "Drafted Team": ["Toadsworth", "Toad(B)", "Yoshi", "Magikoopa(B)", "Bro(B)", "Mario", "Mario", "Baby Luigi", "Toad(G)", "Diddy"]},
+        "cornman": {"Team Name": "Scare Crows", "Division": "Division 2", "Color": "#D6C128", "Display Name": "Cornman", "Drafted Team": ["Mario", "Noki(G)", "Bro(F)", "Bowser(R)", "Bowser Jr", "Pianta(Y)", "Noki(B)", "Pianta(B)", "Dry Bones(G)", "Monty"]},
+        "hunter002": {"Team Name": "Gatherers", "Division": "Division 2", "Color": "#BA002B", "Display Name": "Hunter", "Drafted Team": ["Noki(G)", "Peach", "Peach", "Bro(B)", "Magikoopa(R)", "Mario", "Toad(B)", "Toad(G)", "Toad(Y)", "Shy Guy(Bk)"]}
+    },
+    "League Name": "National Netplay League",
+    "Font": "Lalezar-Regular.ttf",
+    "Matchups": {
+        "Week 1": [
+            ["nhamelin", "Baltor33"],
+            ["chillinchikns", "BennyOkay"],
+            ["JayKay", "MattGree"],
+            ["hellzhero", "Cezarito"],
+            ["Plovely", "redbonesfan"],
+            ["Nuche", "Cornman"],
+            ["hunter002", "balmbtransfer"],
+            ["vicklessfalcon", "flatbread"]
+        ],
+        "Interleague #1": [
+            ["vicklessfalcon", "Cezarito"],
+            ["flatbread", "hellzhero"],
+            ["Nuche", "JayKay"],
+            ["balmbtransfer", "Baltor33"],
+            ["Cornman", "BennyOkay"],
+            ["hunter002", "MattGree"],
+            ["Plovely", "chillinchikns"],
+            ["redbonesfan", "nhamelin"]
+        ],
+        "Interleague #2": [
+            ["Cezarito", "balmbtransfer"],
+            ["hellzhero", "Nuche"],
+            ["JayKay", "flatbread"],
+            ["Baltor33", "vicklessfalcon"],
+            ["BennyOkay", "redbonesfan"],
+            ["MattGree", "Plovely"],
+            ["chillinchikns", "hunter002"],
+            ["nhamelin", "Cornman"]
+        ],
+        "Week 2": [
+            ["MattGree", "Cezarito"],
+            ["JayKay", "hellzhero"],
+            ["Baltor33", "BennyOkay"],
+            ["nhamelin", "chillinchikns"],
+            ["balmbtransfer", "flatbread"],
+            ["hunter002", "vicklessfalcon"],
+            ["redbonesfan", "Cornman"],
+            ["Plovely", "Nuche"]
+        ],
+        "Week 3": [
+            ["JayKay", "BennyOkay"],
+            ["nhamelin", "Cezarito"],
+            ["hellzhero", "chillinchikns"],
+            ["Baltor33", "MattGree"],
+            ["hunter002", "Cornman"],
+            ["Plovely", "flatbread"],
+            ["vicklessfalcon", "Nuche"],
+            ["redbonesfan", "balmbtransfer"]
+        ],
+        "Week 4": [
+            ["chillinchikns", "MattGree"],
+            ["hellzhero", "Baltor33"],
+            ["nhamelin", "JayKay"],
+            ["Cezarito", "BennyOkay"],
+            ["Nuche", "balmbtransfer"],
+            ["vicklessfalcon", "redbonesfan"],
+            ["Plovely", "hunter002"],
+            ["flatbread", "Cornman"]
+        ],
+        "Week 5": [
+            ["hellzhero", "nhamelin"],
+            ["BennyOkay", "MattGree"],
+            ["chillinchikns", "Cezarito"],
+            ["JayKay", "Baltor33"],
+            ["vicklessfalcon", "Plovely"],
+            ["Cornman", "balmbtransfer"],
+            ["Nuche", "flatbread"],
+            ["hunter002", "redbonesfan"]
+        ],
+        "Interleague #3 (Weeks 5-6)": [
+            ["flatbread", "Cezarito"],
+            ["vicklessfalcon", "hellzhero"],
+            ["balmbtransfer", "JayKay"],
+            ["Nuche", "Baltor33"],
+            ["hunter002", "BennyOkay"],
+            ["Cornman", "MattGree"],
+            ["redbonesfan", "chillinchikns"],
+            ["Plovely", "nhamelin"]
+        ],
+        "Week 6": [
+            ["Baltor33", "chillinchikns"],
+            ["Cezarito", "JayKay"],
+            ["BennyOkay", "nhamelin"],
+            ["MattGree", "hellzhero"],
+            ["redbonesfan", "Nuche"],
+            ["flatbread", "hunter002"],
+            ["Cornman", "Plovely"],
+            ["balmbtransfer", "vicklessfalcon"]
+        ],
+        "Week 7 (Catch Up)": [
+            ["BennyOkay", "hellzhero"],
+            ["MattGree", "nhamelin"],
+            ["Cezarito", "Baltor33"],
+            ["chillinchikns", "JayKay"],
+            ["Cornman", "vicklessfalcon"],
+            ["balmbtransfer", "Plovely"],
+            ["flatbread", "redbonesfan"],
+            ["Nuche", "hunter002"]
+        ]
+    }
+}
