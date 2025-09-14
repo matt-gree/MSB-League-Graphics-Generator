@@ -1,4 +1,5 @@
-from games_image_generator import LeagueData, GeneratorSettings, standings_generator, scorecard_generator, make_weekly_graphics, get_web_games
+from league_data_handler import LeagueData, get_web_games
+from games_image_generator import GeneratorSettings, standings_generator, scorecard_generator, make_weekly_graphics
 import pandas as pd
 import scipy.stats as stats
 import matplotlib.pyplot as plt
@@ -9,7 +10,6 @@ from fuzzywuzzy import process
 from pyRio.api_manager import APIManager
 from pyRio.web_functions import game_mode_ladder
 from games_image_generator import generate_stadings_df, remove_games_after_cutoff
-from numba import njit
 
 
 manager = APIManager()
@@ -17,7 +17,6 @@ elo_map = pd.DataFrame(game_mode_ladder(manager, 'NNL Season 7')).T['rating'].to
 
 NNLS7 = LeagueData('NNLSeason7')
 df = get_web_games(NNLS7, edit_mode_file=True)
-df = remove_games_after_cutoff(NNLS7, df, 'Week 6')
 
 def match_player_to_team(player_name):
         best_match = process.extractOne(player_name.lower(), NNLS7.player_data.keys())
@@ -147,7 +146,7 @@ def monte_carlo(matchup, df, elo_map, num_simulations = 10000, elo_scaling = 200
     
     return run_differential
 
-# monte_carlo(('Flatbread', 'DrWinkly'), df, elo_map, plot=True)
+monte_carlo(('MattGree', 'Cezarito'), df, elo_map, plot=True)
 
 def monte_carlo_two_game_series(matchup, df, elo_map, num_simulations=10000, elo_scaling=200, plot=False):
     """Simulates a two-game series between two players using Monte Carlo simulations."""
@@ -207,7 +206,7 @@ def monte_carlo_two_game_series(matchup, df, elo_map, num_simulations=10000, elo
 
 # monte_carlo_two_game_series(('Flatbread', 'DrWinkly'), df, elo_map, plot=True)
 
-def simulate_season(games_df, elo_map, matchups, current_standings, num_simulations=10000, elo_scaling=200):
+def simulate_season(games_df, elo_map, matchups, current_standings, games_per_matchup=2, num_simulations=10000, elo_scaling=200):
     rw_league_player_names = list(current_standings.index)
     standings_tracker = {team: np.zeros(len(rw_league_player_names)) for team in rw_league_player_names}
 
@@ -222,7 +221,7 @@ def simulate_season(games_df, elo_map, matchups, current_standings, num_simulati
         for game in matchups:
             team1 = team_name_map[game[0]]
             team2 = team_name_map[game[1]]
-            for i in range(2):
+            for i in range(games_per_matchup):
                 run_differential = monte_carlo((team1, team2), games_df, elo_map, num_simulations=1, elo_scaling=elo_scaling)
                 run_differential = int(run_differential[0])
                 simulated_records.loc[team1, 'Games Played'] += 1
@@ -258,10 +257,10 @@ def simulate_season(games_df, elo_map, matchups, current_standings, num_simulati
     standings_df.index += 1  # Rank starts from 1
     return standings_df
 
-current_standings = generate_stadings_df(df, NNLS7)
-print(current_standings)
-simulation = simulate_season(df, elo_map, remaining_matchups, current_standings)
-simulation.to_excel("season_simulation_results.xlsx", index=True)
+# current_standings = generate_stadings_df(df, NNLS7)
+# print(current_standings)
+# simulation = simulate_season(df, elo_map, remaining_matchups, current_standings)
+# simulation.to_excel("season_simulation_results.xlsx", index=True)
 
 
 def elo_run_diff_regression(games_df):
@@ -374,3 +373,131 @@ def run_differential_normal():
     plt.title("Q-Q Plot for Run Differential")
     plt.show()
 
+def validate_model(games_df):
+    # Add new columns to games_df
+    games_df["predicted_differential"] = np.nan
+    games_df["home_win_prob"] = np.nan
+    games_df["away_win_prob"] = np.nan
+    games_df["correct_prediction"] = False
+    games_df["winner_is_home"] = False
+
+    for idx, row in games_df.iterrows():
+        user1, user2 = row['home_user'], row['away_user']
+        
+        # Get predicted run differential distribution
+        r1, p1, r2, p2 = matchup_run_distirbution(user1, user2, games_df)
+        simulated_differential = monte_carlo((user1, user2), games_df, elo_map, num_simulations=100000)
+
+        # Compute win probability
+        home_win_prob = np.mean(simulated_differential > 0)
+        away_win_prob = 1 - home_win_prob  # Since it's a two-player game
+
+        # Determine predicted winner
+        predicted_winner = user1 if home_win_prob > away_win_prob else user2
+        predicted_differential = np.mean(simulated_differential)
+
+        # Store results in games_df
+        games_df.at[idx, "predicted_differential"] = predicted_differential
+        games_df.at[idx, "home_win_prob"] = home_win_prob
+        games_df.at[idx, "away_win_prob"] = away_win_prob
+
+        # Compare with actual winner
+        actual_differential = row["home_score"] - row["away_score"]
+        actual_winner = user1 if actual_differential > 0 else user2
+        games_df.at[idx, "correct_prediction"] = predicted_winner == actual_winner
+
+        # Assign predicted win probability of the winner
+        if row['winner_user'] == user1:
+            games_df.at[idx, "winner_win_prob"] = home_win_prob
+            games_df.at[idx, "winner_is_home"] = True
+        else:
+            games_df.at[idx, "winner_win_prob"] = away_win_prob
+            games_df.at[idx, "winner_is_home"] = False
+
+    print(games_df)
+
+    # Set plot style
+    sns.set_style("whitegrid")
+
+    # Create the scatter plot
+    plt.figure(figsize=(8, 6))
+    sns.scatterplot(x=games_df["predicted_differential"], y=games_df["home_score"] - games_df["away_score"], alpha=0.7)
+
+    # Add a reference line (y = x) for perfect predictions
+    plt.axline((0, 0), slope=1, color='red', linestyle="dashed", label="Perfect Prediction")
+
+    # Labels and title
+    plt.xlabel("Predicted Run Differential")
+    plt.ylabel("Actual Run Differential")
+    plt.title("Predicted vs. Actual Run Differential")
+
+    # Show correlation coefficient
+    correlation = games_df["predicted_differential"].corr(games_df["home_score"] - games_df["away_score"])
+    plt.figtext(0.15, 0.85, f"Correlation: {correlation:.2f}", fontsize=12, color="blue")
+
+    X = games_df["predicted_differential"]
+    y = games_df["home_score"] - games_df["away_score"]
+
+    # Add a constant to the independent variable (for the intercept in the regression model)
+    X = sm.add_constant(X)
+    # Fit the model
+    model = sm.OLS(y, X).fit()
+
+    # Print out the summary
+    print(model.summary())
+
+    plt.legend()
+    plt.show()
+
+    # Compute prediction error
+    games_df["prediction_error"] = games_df["predicted_differential"] - (games_df["home_score"] - games_df["away_score"])
+
+    # Plot the histogram
+    plt.figure(figsize=(8, 6))
+    sns.histplot(games_df["prediction_error"], bins=20, kde=True, color="blue", alpha=0.7)
+
+    # Add a vertical line at 0 (perfect prediction)
+    plt.axvline(0, color="red", linestyle="dashed", label="Perfect Prediction (Error = 0)")
+
+    # Labels and title
+    plt.xlabel("Prediction Error (Predicted - Actual)")
+    plt.ylabel("Frequency")
+    plt.title("Distribution of Prediction Errors")
+
+    # Show mean error
+    mean_error = games_df["prediction_error"].mean()
+    plt.figtext(0.15, 0.85, f"Mean Error: {mean_error:.2f}", fontsize=12, color="blue")
+
+    plt.legend()
+    plt.show()
+
+    # Step 1: Create bins (0.0–0.1, 0.1–0.2, ..., 0.9–1.0)
+    games_df['win_prob_bin'] = np.round(games_df['home_win_prob'], 1)  # Bin into 0.1 intervals
+
+    # Step 2: Calculate actual win rate in each bin
+    calibration_df = games_df.groupby('win_prob_bin').agg(
+        predicted_win_rate=('win_prob_bin', 'mean'),  # Average predicted probability per bin
+        actual_win_rate=('winner_is_home', 'mean'),  # Actual win % in that bin
+        count=('correct_prediction', 'count')  # Number of games per bin
+    ).reset_index()
+
+    # Step 3: Plot Calibration Curve
+    plt.figure(figsize=(8, 6))
+    sns.lineplot(x=calibration_df['predicted_win_rate'], y=calibration_df['actual_win_rate'], marker='o', label='Actual')
+    plt.plot([0, 1], [0, 1], linestyle="--", color="gray", label="Perfect Calibration")  # Reference diagonal
+    plt.xlabel("Predicted Win Probability")
+    plt.ylabel("Actual Win Rate")
+    plt.title("Win Probability Calibration")
+    plt.legend()
+    plt.show()
+
+    # Print summary statistics
+    print(calibration_df)
+
+    # Filter games where the home team's predicted win probability is less than 20%
+    low_win_prob_games = games_df[(games_df['home_win_prob'] < 0.2) | (games_df['away_win_prob'] < 0.25)]
+
+    # Print the filtered dataframe
+    print(low_win_prob_games[['home_user', 'home_score', 'away_user', 'away_score', 'home_win_prob', 'away_win_prob', 'win_prob_bin', 'winner_win_prob', 'predicted_differential', 'correct_prediction']])
+
+validate_model(df)
