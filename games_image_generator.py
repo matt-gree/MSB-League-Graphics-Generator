@@ -7,24 +7,9 @@ from fuzzywuzzy import process
 from pathlib import Path
 
 from pyRio import endpoint_handling, web_functions, api_manager, web_caching
+import league_data_handler as ldh
 
-class LeagueData():
-    def __init__(self, tag):
-        self.tag = tag
-        self.path = Path(__file__).parent / "LeagueData" / tag
-
-        with open(self.path / 'teams.json', 'r') as json_file:
-            data = json.load(json_file)
-        
-        self.player_data = data['Players']
-        self.league_name = data['League Name']
-        self.font = data['Font']
-        self.matchups = data['Matchups']
-
-        self.json_path = self.path / "edit_games.json"
-
-
-class GeneratorSettings(LeagueData):
+class GeneratorSettings(ldh.LeagueData):
     def __init__(self, tag, font_dict=False):
         super().__init__(tag)
 
@@ -315,7 +300,7 @@ def scorecard_generator(games_df: pd.DataFrame, settings: GeneratorSettings, lim
         resized_background.paste(remove_transparency, (0, 0), remove_transparency)  # Using the alpha channel as mask
         resized_background.save(settings.path / output_name)
 
-def generate_stadings_df(games_df, settings: LeagueData):
+def generate_stadings_df(games_df, settings: ldh.LeagueData):
     standings = {}
 
     for index, game in games_df.iterrows():
@@ -405,7 +390,7 @@ def standings_generator(games_df: pd.DataFrame, settings: GeneratorSettings, siz
 
         drawing_y_pos += title_top_font_padding +settings.title_padding
 
-    standings_df = generate_stadings_df(games_df)
+    standings_df = generate_stadings_df(games_df, settings)
 
     for player, standings in standings_df.iterrows():
         player = player.lower()
@@ -421,42 +406,7 @@ def standings_generator(games_df: pd.DataFrame, settings: GeneratorSettings, siz
         
     image.save(settings.path / output_name)
 
-def get_web_games(settings: LeagueData, edit_mode_file=True):
-    manager = api_manager.APIManager()
-    api_response = web_functions.games_endpoint(manager, settings.tag, limit_games=500)
-    web_cache = web_caching.CompleterCache(manager)
-    games_df = endpoint_handling.games_endpoint(api_response, web_cache)
-    
-    if edit_mode_file:
-        add_games_df = pd.read_json(settings.json_path, orient='records')
-        add_games_df['date_time_start'] = pd.to_datetime(add_games_df['date_time_start'], utc=True, unit='ms').dt.tz_convert('US/Eastern')
-        add_games_df['date_time_end'] = pd.to_datetime(add_games_df['date_time_end'], utc=True, unit='ms').dt.tz_convert('US/Eastern')
-        games_df = pd.concat([games_df, add_games_df], ignore_index=True)
-
-    unique_names = pd.unique(games_df[['away_user', 'home_user']].values.ravel()).tolist()
-
-    def match_player_to_team(player_name):
-        best_match = process.extractOne(player_name, unique_names)
-        if best_match:
-            # Return the team information corresponding to the best match
-            return best_match[0]
-        return None
-    
-    games_df["Week"] = ""
-
-    for week, matches_list in settings.matchups.items():
-        for match in matches_list:
-            team1 = match_player_to_team(match[0])
-            team2 = match_player_to_team(match[1])
-
-            mask = ((games_df["away_user"] == team1) & (games_df["home_user"] == team2)) | \
-                    ((games_df["away_user"] == team2) & (games_df["home_user"] == team1))
-            
-            games_df.loc[mask, "Week"] = week
-
-    return games_df
-
-def remove_games_after_cutoff(settings: LeagueData, games_df: pd.DataFrame, cutoff: str):
+def remove_games_after_cutoff(settings: ldh.LeagueData, games_df: pd.DataFrame, cutoff: str):
     ordered_weeks = list(settings.matchups.keys())
     if cutoff not in ordered_weeks:
         raise ValueError(f"'{cutoff}' not found in the list.")
@@ -471,7 +421,7 @@ def remove_games_after_cutoff(settings: LeagueData, games_df: pd.DataFrame, cuto
     return games_df
 
 def make_individual_games(settings: GeneratorSettings, games_df: pd.DataFrame, edit_mode_file):
-    games_df = get_web_games(settings, edit_mode_file)
+    games_df = ldh.get_web_games(settings, edit_mode_file)
 
     for index, game in games_df.iterrows():
         game_df = games_df.iloc[[index]].reset_index(drop=True)
