@@ -2,7 +2,7 @@ import pandas as pd
 import json
 from fuzzywuzzy import process
 from pathlib import Path
-from pyRio import endpoint_handling, web_functions, api_manager, web_caching
+from pyrio import endpoint_handling, web_functions, api_manager, web_caching
 
 
 class LeagueData():

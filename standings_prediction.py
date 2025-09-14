@@ -7,8 +7,8 @@ import seaborn as sns
 import numpy as np
 import statsmodels.api as sm
 from fuzzywuzzy import process
-from pyRio.api_manager import APIManager
-from pyRio.web_functions import game_mode_ladder
+from pyrio.api_manager import APIManager
+from pyrio.web_functions import game_mode_ladder
 from games_image_generator import generate_stadings_df, remove_games_after_cutoff
 
 

@@ -6,7 +6,7 @@ import json
 from fuzzywuzzy import process
 from pathlib import Path
 
-from pyRio import endpoint_handling, web_functions, api_manager, web_caching
+from pyrio import endpoint_handling, web_functions, api_manager, web_caching
 import league_data_handler as ldh
 
 class GeneratorSettings(ldh.LeagueData):
